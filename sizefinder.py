@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #calculate the size of a folder by
 #summing the size of each of its files/subfolders
 
@@ -8,6 +9,10 @@
 # and returns a human-readable string 
 # supports KB, MB, GB, and TB
 def getAsReasonableUnit(byteSize):
+
+    #if size is None, return 'Unscanned'
+    if byteSize == None:
+        return 'Unscanned'
 
     #try each unit in descending order of size
     #when we find a unit where the value is greater than one,
@@ -29,6 +34,18 @@ def getAsReasonableUnit(byteSize):
         
     #if size is too small even for KB, return in bytes
     return "{} bytes".format(byteSize)
+   
+#returns file size in bytes
+#handles FileNotFoundError by printing a message and returning None   
+def getFileSize(filePath):
+    from os.path import getsize
+    
+    try:
+        return getsize(filePath)
+    except FileNotFoundError:
+    	print("Could not access {}".format(filePath))
+    	return None
+
 
 
 #return the size of a folder in bytes
@@ -42,7 +59,9 @@ def calcFolderSize(folderPath):
 
         for file in files:
             filePath = os.path.join(path, file)
-            size += os.path.getsize(filePath)
+            fileSize = getFileSize(filePath)
+            if fileSize != None:
+            	size += fileSize
 
     return size
 
@@ -57,7 +76,7 @@ def masterFolderSize(folderPath):
     for path, dirs, files in os.walk(folderPath):
         for file in files:
             print("Scanning {}".format(file), end = " ")
-            ssize = os.path.getsize(os.path.join(path, file))
+            size = getFileSize(os.path.join(path, file))
             print(getAsReasonableUnit(size))
 
         for directory in dirs:
@@ -82,7 +101,7 @@ def orderedFolderSize(folderPath):
             for file in files:
                 #calc size from files
                 print("Scanning {}:".format(file), end = " ")
-                size = os.path.getsize(os.path.join(path, file))
+                size = getFileSize(os.path.join(path, file))
                 print(getAsReasonableUnit(size))
                 folderSizes.append((file, size))
         
@@ -103,8 +122,8 @@ def orderedFolderSize(folderPath):
 
     print("Ordering Items...")
     
-    folderSizes.sort(key = lambda x: x[1], reverse = True)
-    totalFolderSize = sum(map(lambda x: x[1], folderSizes))
+    folderSizes.sort(key = lambda x: x[1] if x[1] != None else -1, reverse = True)
+    totalFolderSize = sum(map(lambda x: x[1] if x[1] != None else 0, folderSizes))
 
     print("Showing Ordered Results:\n#######")
 
@@ -131,7 +150,7 @@ Acts recursively (Run on C:/ at your own risk!!!!)
     
     
     if len(sys.argv) <= 1:
-        blurb +="\nPlease specify a folder (example: sizefinder.py \"c:/Progam Files\""
+        blurb +="\nPlease specify a folder (example: sizefinder.py \"c:/Progam Files\")"
 
     else:
         targetDir = sys.argv[1]
